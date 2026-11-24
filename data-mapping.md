@@ -273,8 +273,8 @@ A/B/C2/D2/E2/G/H/I 와 동일하다.
 | `[data-room-hero-slides]`                                  | `pages.room[].hero.images` → 객실 인테리어/썸네일     |
 | `[data-room-nav]`                                          | `renderRoomNav(…, currentId)` — 그룹 안이면 펼침      |
 | `[data-room-name]`                                         | 객실명 (`roomtypes[].name` → `rooms[].name`)          |
-| `[data-room-structure]`                                    | `rooms[].roomStructures[0]` + `totalRoomCount` (객실 정보 표 유형 칸만. 객실명 아래 줄은 뺐다) |
-| `[data-room-notice]`                                       | `rooms[].roomInfo` → `usageGuide` → 원본 문장         |
+| `[data-room-structure]`                                    | `rooms[].roomStructures[0]` + `totalRoomCount` (객실명 아래 줄 + 객실 정보 표 유형 칸) |
+| `[data-room-notice]`                                       | 체크인·체크아웃(`rooms[].timeSettings` → `property.checkin/checkout`) + `property.checkInOutInfo` 의 부가정보 줄 → 원본 문장. `usageGuide`(트립 예전 소개)는 쓰지 않는다 |
 | `[data-room-base-occupancy]` / `[data-room-max-occupancy]` | `rooms[].baseOccupancy` / `maxOccupancy`              |
 | `[data-room-size]`                                         | `rooms[].sizePyeong` → `size`(㎡) 환산, **항상 `평`** |
 | `[data-room-amenities]`                                    | `rooms[].amenities[]` → `집기품목 : …`                |
