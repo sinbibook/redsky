@@ -152,18 +152,50 @@
     setAllText('[data-room-structure]', this.formatRoomStructure(room));
   };
 
-  // MAPPER: rooms[].roomInfo / usageGuide → .notice_li
-  // 원본은 `자세한 내용은 이용안내 페이지 확인 부탁드립니다.` 한 줄이다.
-  // 줄바꿈이 있으면 줄마다 li 를 만든다.
+  // MAPPER: 입퇴실 시간 + 입/퇴실 안내 부가정보 → .notice_li
+  //
+  //   체크인   rooms[].timeSettings.checkin  → property.checkin
+  //   체크아웃 rooms[].timeSettings.checkout → property.checkout
+  //   부가정보 property.checkInOutInfo 에서 머리줄·시간 줄을 뺀 나머지
+  //            (백오피스 숙소 블록정보 > 입/퇴실 안내 > 부가정보. 어드민·트립 동기화 모두
+  //             `[입퇴실안내] / - 입실: / - 퇴실: / - 입실 마감시간: / 부가정보` 로 이어 저장한다)
+  //
+  // 예전에는 rooms[].roomInfo → usageGuide 를 썼다. usageGuide 는 트립 동기화가
+  // 트립 객실의 예전 소개(intro_info — 트립 화면에서 2026-01 에 입력칸이 없어짐)를 넣는 칸이라
+  // 수백 자짜리 글이 한 줄 자리에 통째로 들어갔다 (리플렉스풀빌라). 그래서 쓰지 않는다.
+  // 셋 다 없으면 원본 문장 한 줄을 둔다.
   RoomMapper.prototype.NOTICE_FALLBACK = '자세한 내용은 이용안내 페이지 확인 부탁드립니다.';
+
+  // 'HH:MM' / 'HH:MM:SS' → 'HH:MM'
+  RoomMapper.prototype.formatNoticeTime = function (value) {
+    var m = String(value || '').trim().match(/^(\d{1,2}):(\d{2})/);
+    return m ? (m[1].length === 1 ? '0' + m[1] : m[1]) + ':' + m[2] : '';
+  };
+
+  // checkInOutInfo 에서 부가정보 줄만 남긴다
+  RoomMapper.prototype.getCheckInOutExtraLines = function () {
+    var info = String(this.getProperty().checkInOutInfo || '');
+    var HEADER = /^\[\s*입\s*퇴실\s*안내\s*\]$/;
+    var TIME_LINE = /^[-·•*※\s]*(입실|퇴실|체크인|체크아웃)\s*(마감)?\s*(시간)?\s*[:：]/;
+    return info.split('\n').map(function (line) {
+      return line.trim();
+    }).filter(function (line) {
+      return line && !HEADER.test(line) && !TIME_LINE.test(line);
+    });
+  };
 
   RoomMapper.prototype.mapNotice = function (roomtype) {
     var room = this.findRoomById(roomtype && roomtype.id) || {};
-    var body = this.firstText(room.roomInfo, room.usageGuide, this.NOTICE_FALLBACK);
+    var times = room.timeSettings || {};
+    var property = this.getProperty();
+    var checkin = this.formatNoticeTime(times.checkin) || this.formatNoticeTime(property.checkin);
+    var checkout = this.formatNoticeTime(times.checkout) || this.formatNoticeTime(property.checkout);
 
-    var lines = body.split('\n').filter(function (line) {
-      return line.trim();
-    });
+    var lines = [];
+    if (checkin) lines.push('체크인 ' + checkin);
+    if (checkout) lines.push('체크아웃 ' + checkout);
+    lines = lines.concat(this.getCheckInOutExtraLines());
+    if (!lines.length) lines = [this.NOTICE_FALLBACK];
 
     document.querySelectorAll('[data-room-notice]').forEach(function (ul) {
       ul.innerHTML = '';
